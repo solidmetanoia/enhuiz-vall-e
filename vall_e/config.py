@@ -25,7 +25,11 @@ class Config(ConfigBase):
     token_dim: int = 256
     num_tokens: int = 1024
 
-    nj: int = 8
+    # maximum total workers
+    max_workers: int = 8
+    # maximum total workers to be used in subtrain and eval
+    max_eval_workers: int = max_workers // 4
+
     batch_size: int = 32
     eval_batch_size: int = 32
     warmup_min_lr: float = 1e-6

@@ -200,13 +200,16 @@ def _seed_worker(worker_id):
     random.seed(worker_seed)
 
 
-def _create_dataloader(dataset, training):
+def _create_dataloader(dataset, training, num_workers):
+    if num_workers < 1:
+        num_workers = 1
+
     return DataLoader(
         dataset=dataset,
         batch_size=cfg.batch_size if training else cfg.eval_batch_size,
         shuffle=training,
         drop_last=training,
-        num_workers=cfg.nj,
+        num_workers=num_workers,
         collate_fn=collate_fn,
         persistent_workers=True,
         worker_init_fn=_seed_worker,
@@ -265,8 +268,18 @@ def create_datasets():
 def create_train_val_dataloader():
     train_dataset, val_dataset = create_datasets()
 
-    train_dl = _create_dataloader(train_dataset, training=True)
-    val_dl = _create_dataloader(val_dataset, training=False)
+    max_workers = cfg.max_workers
+    eval_workers = cfg.max_eval_workers
+    train_workers = max_workers - eval_workers
+
+    train_dl = _create_dataloader(
+        train_dataset, training=True,
+        num_workers=train_workers
+    )
+    val_dl = _create_dataloader(
+        val_dataset, training=False,
+        num_workers=eval_workers//2
+    )
 
     _logger.info(str(train_dataset.phone_symmap))
     _logger.info(str(train_dataset.spkr_symmap))
@@ -278,7 +291,10 @@ def create_train_val_dataloader():
     subtrain_dataset.interleaved_reorder_(cfg.get_spkr)
     subtrain_dataset.head_(cfg.max_num_val)
     subtrain_dataset.training_(False)
-    subtrain_dl = _create_dataloader(subtrain_dataset, training=False)
+    subtrain_dl = _create_dataloader(
+        subtrain_dataset, training=False,
+        num_workers=eval_workers//2
+    )
     assert isinstance(subtrain_dl.dataset, VALLEDatset)
 
     return train_dl, subtrain_dl, val_dl
