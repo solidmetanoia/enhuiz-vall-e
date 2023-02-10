@@ -76,6 +76,7 @@ def main():
                     proms_list=batch["proms"],
                     max_steps=cfg.max_val_ar_steps,
                     sampling_temperature=cfg.sampling_temperature,
+                    leave_print=False
                 )
                 resps_list = [r.unsqueeze(-1) for r in resp_list]
             elif cfg.model.startswith("nar"):

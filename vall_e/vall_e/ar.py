@@ -44,6 +44,7 @@ class AR(Base):
         resp_list: list[Tensor] | None = None,
         max_steps: int = 1000,
         sampling_temperature: float = 1.0,
+        leave_print: bool = True,
     ):
         if resp_list is not None:
             return super().forward(
@@ -61,6 +62,7 @@ class AR(Base):
                 proms_list,
                 max_steps,
                 sampling_temperature,
+                leave_print
             )
 
     def _generate(
@@ -69,13 +71,14 @@ class AR(Base):
         proms_list: list[Tensor],
         max_steps: int,
         sampling_temperature: float,
+        leave_print: bool = True,
     ):
         device = text_list[0].device
         resp_list: list[Tensor] = [
             torch.zeros(0, device=device).long() for _ in text_list
         ]
         stopped = torch.zeros(len(text_list), device=device).bool()
-        for _ in trange(max_steps):
+        for _ in trange(max_steps, leave=leave_print):
             r = super().forward(
                 text_list,
                 proms_list,
